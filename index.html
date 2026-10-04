@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Процентын адал явдал</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rubik:wght@400;500;700;900&display=swap">
+<style>
+:root{
+  --bg:#1a0b2e; --bg2:#241040; --panel:#2d1858; --panel2:#3a2170; --line:#5b3a9e;
+  --ink:#f5edff; --muted:#c3b1e6;
+  --neon:#39ff14; --neon-d:#1fae0a; --gold:#ffd23f; --gold-d:#c99a00;
+  --pink:#ff3ea5; --cyan:#29e0ff; --red:#ff4d6d; --org:#ff9f1c;
+  --px:"Press Start 2P",monospace;
+  --shadow:6px 6px 0 #0b0418;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{color:var(--ink);font-family:"Rubik","Segoe UI",system-ui,sans-serif;font-size:20px;line-height:1.4;overflow:hidden;background-color:var(--bg);
+  background-image:radial-gradient(rgba(255,255,255,.55) 1px,transparent 1.5px),radial-gradient(rgba(41,224,255,.35) 1px,transparent 1.5px),linear-gradient(rgba(91,58,158,.18) 2px,transparent 2px),linear-gradient(90deg,rgba(91,58,158,.18) 2px,transparent 2px);
+  background-size:140px 140px,90px 90px,32px 32px,32px 32px;background-position:0 0,45px 60px,0 0,0 0}
+button{font:inherit;cursor:pointer;color:inherit}
+input{font:inherit}
+.px{font-family:var(--px);letter-spacing:0}
+
+/* ===== Header (game HUD) ===== */
+.top{position:fixed;inset:0 0 auto 0;height:66px;display:grid;grid-template-columns:auto minmax(0,1fr) minmax(260px,420px) auto;align-items:center;gap:14px;padding:0 14px;z-index:20;background:#12061f;border-bottom:4px solid var(--pink);box-shadow:0 4px 0 #0b0418}
+.hud-l{display:flex;align-items:center;gap:10px;white-space:nowrap}
+.hud-l .lv{font-family:var(--px);font-size:12px;background:var(--pink);color:#fff;padding:6px 8px;box-shadow:3px 3px 0 #000}
+.hud-l .sbj{font-weight:700;font-size:16px;color:var(--muted)}
+.stage{min-width:0;overflow:hidden}
+.stage small{display:block;font-family:var(--px);font-size:9px;color:var(--cyan);margin-bottom:4px}
+.stage b{display:block;font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xpbox{display:flex;align-items:center;gap:8px}
+.xpbox .xl{font-family:var(--px);font-size:12px;color:var(--neon)}
+.xpbar{flex:1;height:26px;background:#0b0418;border:3px solid #fff;position:relative;box-shadow:3px 3px 0 #000;overflow:hidden}
+.xpbar .f{position:absolute;inset:0 auto 0 0;width:0;background:repeating-linear-gradient(90deg,var(--neon) 0 10px,var(--neon-d) 10px 12px);transition:width .6s steps(12)}
+.xpbar .t{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--px);font-size:10px;color:#fff;text-shadow:2px 2px 0 #000}
+.coins{display:flex;align-items:center;gap:5px;font-family:var(--px);font-size:12px;color:var(--gold)}
+.coin{display:inline-block;width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff6b0 0 20%,var(--gold) 22% 62%,var(--gold-d) 64%);border:2px solid #7a5a00;vertical-align:middle}
+.hud-r{display:flex;align-items:center;gap:8px}
+.timer{font-family:var(--px);font-size:14px;color:var(--gold);cursor:pointer;white-space:nowrap}
+.timer.warn{color:var(--org);animation:blink 1s steps(2) infinite}.timer.over{color:var(--red)}
+.tbtn{border:2px solid #fff;background:transparent;padding:4px 9px;font-weight:700;font-size:15px;box-shadow:2px 2px 0 #000}
+.tbtn:hover{border-color:var(--neon);color:var(--neon)}
+@keyframes blink{50%{opacity:.35}}
+
+/* ===== Slides ===== */
+.deck{position:absolute;inset:76px 0 72px 0;z-index:1}
+.slide{position:absolute;inset:0;overflow:hidden;padding:8px clamp(16px,3vw,44px) 10px;opacity:0;visibility:hidden;transform:scale(.98);transition:opacity .3s,transform .3s,visibility .3s}
+.slide.active{opacity:1;visibility:visible;transform:none}
+.inner{max-width:1300px;margin:0 auto;height:100%;display:flex;flex-direction:column}
+h2{font-family:var(--px);font-weight:400;font-size:clamp(16px,1.8vw,24px);line-height:1.35;margin:2px 0 6px;color:var(--gold);text-shadow:3px 3px 0 #000;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+h2 .lvtag{font-size:11px;background:var(--neon);color:#0b0418;padding:5px 8px;text-shadow:none;box-shadow:3px 3px 0 #000}
+h3{font-size:20px;margin:0 0 6px;font-weight:900;color:var(--cyan)}
+.sub{color:var(--muted);margin:0 0 8px;font-size:18px}
+.card{background:var(--panel);border:3px solid var(--line);box-shadow:var(--shadow);padding:12px 16px;position:relative}
+.card.dark{background:#140826}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;min-height:0;flex:1}
+.g64{grid-template-columns:1.25fr 1fr}.g46{grid-template-columns:1fr 1.25fr}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border:3px solid #0b0418;padding:7px 14px;font-weight:900;font-size:18px;background:var(--neon);color:#0b0418;box-shadow:4px 4px 0 #0b0418;transition:transform .05s}
+.btn:hover{filter:brightness(1.1)}
+.btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #0b0418}
+.btn.pink{background:var(--pink);color:#fff}.btn.cyan{background:var(--cyan)}.btn.gold{background:var(--gold)}
+.btn.ghost{background:var(--panel2);color:var(--ink);border-color:var(--line)}
+.btn.ghost.on{background:var(--gold);color:#0b0418;border-color:#0b0418}
+.btn.sm{padding:5px 10px;font-size:16px}
+.btn[disabled]{opacity:.4;cursor:default}
+.def{padding:8px 12px;margin:6px 0;background:#140826;border-left:6px solid var(--neon)}
+.def.p{border-color:var(--pink)}.def.c{border-color:var(--cyan)}.def.g{border-color:var(--gold)}
+.big{font-family:var(--px);font-size:22px;color:var(--neon);text-shadow:3px 3px 0 #000;line-height:1.6}
+.feedback{font-size:18px;font-weight:700;min-height:26px;margin-top:6px}
+.feedback.ok{color:var(--neon)}.feedback.no{color:var(--red)}
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.05;margin:0 3px;font-weight:700}
+.fr b{border-bottom:2px solid currentColor;padding:0 3px}
+.fr i{font-style:normal;padding:0 3px}
+.inp{width:110px;font-size:20px;font-weight:700;text-align:center;padding:4px;border:3px solid #fff;background:#0b0418;color:#fff;box-shadow:3px 3px 0 #000}
+.inp.ok{border-color:var(--neon);color:var(--neon)}.inp.no{border-color:var(--red);color:var(--red)}
+.calc{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:21px;font-weight:700}
+.ans{display:none}.ans.show{display:block}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-4px)}}
+.xpPop{position:fixed;z-index:60;font-family:var(--px);font-size:20px;color:var(--neon);text-shadow:3px 3px 0 #000;pointer-events:none;animation:pop 1.1s ease-out forwards}
+@keyframes pop{0%{transform:translateY(0) scale(.6);opacity:0}20%{transform:translateY(-10px) scale(1.15);opacity:1}100%{transform:translateY(-70px);opacity:0}}
+
+/* ===== Nav ===== */
+.nav{position:fixed;inset:auto 0 0 0;height:66px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;z-index:20;gap:10px;background:#12061f;border-top:4px solid var(--pink)}
+.dots{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.dot{min-width:42px;height:34px;border:2px solid var(--line);background:var(--bg2);color:var(--muted);font-family:var(--px);font-size:10px;box-shadow:2px 2px 0 #000}
+.dot.on{background:var(--neon);color:#0b0418;border-color:#fff}
+.dot.done{background:var(--panel2);color:#fff}
+.tnotes{position:fixed;right:18px;bottom:78px;width:min(440px,calc(100vw - 36px));max-height:calc(100vh - 170px);overflow:auto;background:#fffbe8;color:#2a1450;border:4px solid var(--gold);padding:12px 16px;font-size:16px;box-shadow:var(--shadow);z-index:25;display:none}
+.tnotes.show{display:block}
+.tnotes h4{margin:0 0 6px;font-size:17px}
+.tnotes ul{margin:0;padding-left:20px}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
+
+/* ===== Intro (title screen) ===== */
+.title-scr{flex:1;display:flex;align-items:center;justify-content:center}
+.cart{width:min(980px,100%);background:#12061f;border:6px solid #fff;box-shadow:10px 10px 0 var(--pink),10px 10px 0 6px #0b0418;padding:22px 30px 18px;text-align:center;position:relative}
+.cart .school{font-weight:700;font-size:22px;color:var(--cyan)}
+.cart .subj{font-family:var(--px);font-size:clamp(22px,3vw,36px);color:var(--gold);text-shadow:4px 4px 0 #000;margin:12px 0 6px}
+.cart .topic{font-family:var(--px);font-size:clamp(34px,5.4vw,66px);color:var(--neon);text-shadow:5px 5px 0 #000,0 0 22px rgba(57,255,20,.45);margin:8px 0}
+.cart .game{font-family:var(--px);font-size:clamp(12px,1.3vw,16px);color:var(--pink);margin-bottom:10px}
+.cart .teacher{font-size:24px;font-weight:700;margin-top:6px}
+.press{display:inline-block;margin-top:12px;font-family:var(--px);font-size:16px;color:#fff;background:none;border:none;animation:blink 1.1s steps(2) infinite}
+.pxart{display:flex;justify-content:center;gap:28px;align-items:center}
+.pxart svg{width:110px;height:110px;image-rendering:pixelated}
+
+/* ===== Mission ===== */
+.toss{width:100%;border-collapse:collapse;font-size:18px}
+.toss td,.toss th{padding:4px 5px;text-align:center;border-bottom:2px solid var(--line)}
+.toss th{font-family:var(--px);font-size:10px;color:var(--cyan)}
+.toss td.nm{font-weight:900;text-align:left;color:var(--gold)}
+.rg{font-size:20px}
+.cmpbar{height:26px;background:#0b0418;border:3px solid #fff;position:relative;margin:4px 0 8px}
+.cmpbar div{position:absolute;inset:0 auto 0 0;width:0;background:var(--neon);transition:width 1s steps(20)}
+.cmpbar span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--px);font-size:11px;text-shadow:2px 2px 0 #000}
+.wmap{display:flex;gap:6px;align-items:center;justify-content:space-between;margin-top:6px}
+.node{flex:1;background:var(--bg2);border:3px solid var(--line);padding:6px 4px;text-align:center;font-size:15px;font-weight:700;box-shadow:3px 3px 0 #000;min-width:0}
+.node .n{display:block;font-family:var(--px);font-size:10px;color:var(--neon);margin-bottom:3px}
+.node.boss{border-color:var(--red)}.node.boss .n{color:var(--red)}
+.node.clr{border-color:var(--neon);background:#173d1a}
+.wmap .ar{color:var(--gold);font-family:var(--px);font-size:12px}
+
+/* ===== Level 1 grid ===== */
+.g100wrap{display:flex;gap:8px;align-items:stretch;justify-content:center}
+.g100{display:grid;grid-template-columns:repeat(10,1fr);gap:3px;width:min(420px,calc(100vh - 290px));aspect-ratio:1;background:#0b0418;border:4px solid #fff;padding:3px;touch-action:none;user-select:none;box-shadow:var(--shadow)}
+.cell{background:#2c1650;border:1px solid #3e2470;cursor:pointer}
+.cell.on{background:var(--neon);border-color:#b6ff9e;box-shadow:inset -3px -3px 0 var(--neon-d)}
+.rlab{display:none;flex-direction:column;justify-content:space-around;font-family:var(--px);font-size:9px;color:var(--gold);padding:7px 0}
+.rlab.show{display:flex}
+.target{font-family:var(--px);font-size:28px;color:var(--gold);text-shadow:3px 3px 0 #000;text-align:center;padding:10px;background:#140826;border:3px dashed var(--gold);margin:6px 0}
+.readout{font-size:24px;font-weight:900;text-align:center;padding:6px;background:#140826;border:3px solid var(--line);margin:6px 0}
+.tlist{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.tlist span{font-family:var(--px);font-size:10px;padding:5px 7px;border:2px solid var(--line);background:var(--bg2)}
+.tlist span.done{background:var(--neon);color:#0b0418;border-color:#fff}
+.tlist span.cur{border-color:var(--gold)}
+
+/* ===== Level 2 battery ===== */
+.bat{position:relative;height:44px;border:4px solid #fff;background:#0b0418;margin-right:14px;box-shadow:3px 3px 0 #000}
+.bat::after{content:"";position:absolute;right:-14px;top:9px;width:10px;height:18px;background:#fff}
+.bat .fl{position:absolute;inset:3px auto 3px 3px;width:0;background:var(--neon);transition:width .5s steps(10)}
+.bat .tk{position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(10% - 2px),rgba(11,4,24,.95) calc(10% - 2px) 10%)}
+.bat.big{height:74px}
+.bat.big::after{top:18px;height:30px}
+.scale{display:flex;justify-content:space-between;font-family:var(--px);font-size:8px;color:var(--muted);margin:3px 14px 8px 0}
+.brow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-bottom:2px}
+input[type=range]{width:100%;accent-color:var(--neon);height:30px}
+
+/* ===== Level 3 portals ===== */
+.portals{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.portal{background:radial-gradient(ellipse at center,#5b2bb3 0,#2a0f55 60%,#12061f 100%);border:4px solid var(--cyan);min-height:150px;padding:6px 4px;text-align:center;box-shadow:0 0 14px rgba(41,224,255,.45),4px 4px 0 #000;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
+.portal .pl{font-family:var(--px);font-size:16px;color:var(--gold);text-shadow:2px 2px 0 #000;margin:4px 0}
+.portal .in{display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+.portal.hot{border-color:var(--neon);box-shadow:0 0 20px var(--neon)}
+.tray{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:8px;background:#140826;border:3px dashed var(--line);min-height:66px;margin-top:8px}
+.chip{background:var(--gold);color:#0b0418;font-weight:900;font-size:20px;padding:3px 10px;border:3px solid #0b0418;box-shadow:3px 3px 0 #000;cursor:grab;user-select:none;min-width:52px;text-align:center}
+.chip.sel{background:var(--pink);color:#fff;transform:translateY(-4px)}
+.chip.done{background:var(--neon);font-size:15px;padding:1px 6px;min-width:0;cursor:default;box-shadow:2px 2px 0 #000}
+.machine{text-align:center;padding:10px;background:#140826;border:3px solid var(--cyan);margin:8px 0}
+.machine .q{font-size:30px;font-weight:900;display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap}
+
+/* ===== Level 4 bar model ===== */
+.probtabs{display:flex;gap:6px;flex-wrap:wrap}
+.probtabs .btn{font-size:15px;padding:5px 9px}
+.probtabs .btn.done{background:var(--neon-d);color:#fff}
+.barsvg{width:100%;height:auto;display:block;max-height:calc(100vh - 470px);min-height:120px}
+.barsvg .seg{cursor:pointer}
+.qtext{font-size:22px;font-weight:700;margin:6px 0}
+
+/* ===== Boss ===== */
+.arena{background:linear-gradient(#2a0f55,#12061f 70%);border:4px solid var(--red);box-shadow:var(--shadow);padding:10px 14px;text-align:center;position:relative;display:flex;flex-direction:column;justify-content:space-between}
+.dragon{font-size:min(130px,calc(100vh - 560px));line-height:1.1;display:inline-block;transition:filter .2s}
+.dragon.hit{animation:shake .35s;filter:brightness(2.2) saturate(0)}
+.dragon.dead{transform:rotate(180deg);opacity:.35;transition:transform .8s,opacity .8s}
+.hp{height:28px;border:3px solid #fff;background:#0b0418;position:relative;box-shadow:3px 3px 0 #000}
+.hp .f{position:absolute;inset:0 auto 0 0;width:100%;background:repeating-linear-gradient(90deg,var(--red) 0 12px,#c0233f 12px 14px);transition:width .6s steps(10)}
+.hp .t{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--px);font-size:11px;text-shadow:2px 2px 0 #000}
+.hearts{font-size:26px;letter-spacing:4px}
+.minibar{display:flex;height:40px;border:3px solid #fff;margin:6px 0 2px;background:#0b0418}
+.minibar div{display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;border-right:2px dashed #fff;overflow:hidden;white-space:nowrap}
+.minibar div:last-child{border-right:none}
+.minibar .k{background:var(--neon);color:#0b0418}.minibar .q{background:var(--pink);color:#fff}.minibar .e{background:#2c1650}
+.shop{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:4px 0}
+.shop div{background:#140826;border:2px solid var(--line);text-align:center;font-size:15px;padding:4px}
+.shop b{color:var(--gold)}.shop i{font-style:normal;background:var(--red);color:#fff;font-weight:900;padding:0 4px}
+
+/* ===== Complete / exit ===== */
+.lc{font-family:var(--px);font-size:clamp(20px,2.6vw,34px);color:var(--neon);text-shadow:4px 4px 0 #000;text-align:center;margin:4px 0 8px;animation:blink 1.4s steps(2) 3}
+.badges{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.badge{background:#140826;border:3px solid var(--line);padding:8px 4px;text-align:center}
+.badge .bn{font-family:var(--px);font-size:9px;color:var(--cyan)}
+.badge .bx{font-size:16px;font-weight:700;margin:4px 0}
+.badge .bp{font-family:var(--px);font-size:14px;color:var(--gold)}
+.badge.full{border-color:var(--neon)}
+.g100.mini{width:min(250px,calc(100vh - 470px));pointer-events:none;gap:2px}
+.stars3{display:flex;gap:8px;justify-content:center}
+.stars3 button{font-size:40px;border:none;background:none;filter:grayscale(1);opacity:.4;transition:.15s}
+.stars3 button.on{filter:none;opacity:1;transform:scale(1.1)}
+.exq{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.exq .card{padding:9px 12px}
+.exq .q{font-size:21px;font-weight:700;margin-bottom:6px;min-height:34px}
+.hw li{margin:5px 0}
+
+@media (max-height:900px){
+  body{font-size:18px}
+  .sub{font-size:16px;margin-bottom:6px}
+  .card{padding:9px 13px}
+  .def{padding:6px 10px;margin:4px 0}
+  .target{font-size:22px;padding:6px;margin:4px 0}
+  .readout{font-size:20px;padding:4px;margin:4px 0}
+  .portal{min-height:120px}
+  .machine .q{font-size:24px}
+  .qtext{font-size:19px;margin:4px 0}
+  .bat{height:36px}.bat::after{top:6px}
+  .bat.big{height:60px}.bat.big::after{top:14px}
+  .scale{margin-bottom:4px}
+  .cart{padding:16px 24px 14px}
+  .cart .teacher{font-size:21px}
+  .pxart svg{width:84px;height:84px}
+  .exq .q{font-size:18px;min-height:28px}
+  .toss td,.toss th{padding:2px 4px}
+  .btn{font-size:17px;padding:6px 12px}
+  .hearts{font-size:22px}
+}
+@media (max-width:1000px){
+  .top{grid-template-columns:auto minmax(0,1fr) auto;height:auto;min-height:66px}
+  .xpbox{display:none}
+  .grid2,.exq{grid-template-columns:1fr !important}
+  .slide{overflow:auto}
+  .dots{display:none}
+  .portals,.badges,.shop{grid-template-columns:repeat(3,1fr)}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="hud-l"><span class="lv" id="lvTag">START</span><span class="sbj">🎮 Математик · 5-р анги</span></div>
+  <div class="stage"><small>ПРОЦЕНТЫН АДАЛ ЯВДАЛ · <span id="sheetNo">1/9</span></small><b id="stageName"></b></div>
+  <div class="xpbox" title="XP мөр бол өөрөө процентын загвар!">
+    <span class="xl">XP</span>
+    <div class="xpbar"><div class="f" id="xpFill"></div><div class="t" id="xpText">0/400 = 0%</div></div>
+    <span class="coins"><span class="coin"></span><span id="coinN">0</span></span>
+  </div>
+  <div class="hud-r">
+    <span class="timer" id="timer" title="Хичээлийн үлдсэн хугацаа (2 удаа дарвал 40:00 болно)">⏱<span id="tval">40:00</span></span>
+    <button class="tbtn" id="tPlay" title="Цаг эхлүүлэх / зогсоох">▶</button>
+    <button class="tbtn" id="notesBtn" title="Багшийн тэмдэглэл (N)">📝</button>
+    <button class="tbtn" id="fsBtn" title="Бүтэн дэлгэц (F)">⛶</button>
+  </div>
+</header>
+
+<main class="deck">
+
+<!-- 1. INTRO -->
+<section class="slide" data-name="Эхлэл дэлгэц" data-lv="START" data-min="1"
+  data-notes="Мэндчилж, өнөөдрийн хичээл 'видео тоглоом' хэлбэртэй гэдгийг хэлнэ.|Дээд мөрний ногоон XP мөр бол өөрөө процентын загвар: 400 XP-ийн хэдэн хувийг цуглуулснаа харуулна.|▶ товчоор 40 минутын цагийг эхлүүлнэ. 'PRESS START' дээр дарж эхэлнэ.|Сурах бичиг: IV бүлэг 'Процент', х.120–123.">
+  <div class="inner"><div class="title-scr">
+    <div class="cart">
+      <div class="school">🏫 1-р сургууль</div>
+      <div class="pxart">
+        <svg id="pxPct" viewBox="0 0 9 9" shape-rendering="crispEdges"></svg>
+        <div>
+          <div class="subj">Математик</div>
+          <div class="topic">ПРОЦЕНТ</div>
+          <div class="game">★ Процентын адал явдал ★</div>
+        </div>
+        <svg id="pxCoin" viewBox="0 0 9 9" shape-rendering="crispEdges"></svg>
+      </div>
+      <div class="teacher">👩‍🏫 Багш: В. Гэрэлтуяа</div>
+      <div class="sub" style="margin:4px 0 0">5 түвшин · 1 босс · 400 XP</div>
+      <button class="press" id="pressStart">▶ PRESS START</button>
+    </div>
+  </div></div>
+</section>
+
+<!-- 2. MISSION -->
+<section class="slide" data-name="Даалгавар: Цагариг шидэлт" data-lv="0" data-min="4"
+  data-notes="Сурах бичиг х.120, бүлгийн нээлтийн бодлого (цагариг шидэх).|Асуух: Бат 5 удаа, Оргил 6 удаа оруулсан. Оргил илүү олон оруулсан — гэхдээ илүү амжилттай юу? Хүүхдүүдээр санал өгүүлж, товч дарна.|Хариу: 5 : 8 = 0.625, 6 : 10 = 0.6 → 0.625 > 0.6 тул Бат илүү амжилттай. 0.625 × 100 = 62.5%, 0.6 × 100 = 60%.|Дүгнэлт: 'Бүхэл' (100%) нь өөр өөр байвал процентоор харьцуулдаг. 1% = 1/100. Бүх 8 шидэлт орвол 8/8 = 1 = 100%.|Газрын зургийн нүдэн дээр дарж түвшин рүү үсэрч болно.">
+  <div class="inner">
+    <h2><span class="lvtag">QUEST</span> Хэн илүү амжилттай шидсэн бэ?</h2>
+    <div class="grid2 g64">
+      <div class="card">
+        <table class="toss">
+          <tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>ОРСОН</th></tr>
+          <tr id="tossB"></tr><tr id="tossO"></tr>
+        </table>
+        <div class="row" style="margin:10px 0 4px"><b>Таны таамаг:</b>
+          <button class="btn ghost sm" data-who="b">👦 Бат</button>
+          <button class="btn ghost sm" data-who="o">👧 Оргил</button>
+          <button class="btn ghost sm" data-who="e">🤝 Тэнцүү</button>
+          <button class="btn pink sm" id="tossCmp">⚖️ Харьцуулах</button>
+        </div>
+        <div id="tossRes" style="display:none">
+          <div>👦 Бат: <span class="fr"><b>5</b><i>8</i></span> = 5 : 8 = <b>0.625</b> → <b style="color:var(--neon)">62.5%</b></div>
+          <div class="cmpbar"><div id="cbB"></div><span>62.5%</span></div>
+          <div>👧 Оргил: <span class="fr"><b>6</b><i>10</i></span> = 6 : 10 = <b>0.6</b> → <b style="color:var(--neon)">60%</b></div>
+          <div class="cmpbar"><div id="cbO"></div><span>60%</span></div>
+        </div>
+        <div class="feedback" id="tossFb"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;min-height:0">
+        <div class="card dark">
+          <h3>📜 Тоглоомын гол дүрэм</h3>
+          <div class="def">Аливаа зүйлийг <b>100 тэнцүү</b> хуваасны <b>1 хэсэг</b> = <b>1 процент</b> = <b>1%</b></div>
+          <div class="big" style="text-align:center">1% = <span class="fr"><b>1</b><i>100</i></span> = 0.01</div>
+          <div class="def c">Аравтын бутархай <b>× 100</b> → процент: 0.03 = 3%, 0.23 = 23%, 1.25 = 125%</div>
+          <div class="def g">Бүгдийг нь = <span class="fr"><b>8</b><i>8</i></span> = 1 = <b>100%</b></div>
+        </div>
+        <div class="card">
+          <h3>🗺️ Ертөнцийн газрын зураг</h3>
+          <div class="wmap" id="wmap"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. LEVEL 1 -->
+<section class="slide" data-name="Түвшин 1 · 100 нүдний ертөнц" data-lv="1" data-min="5"
+  data-notes="Сурах бичиг х.121, №611 (будсан хэсгийг бутархай, аравтын, процентоор), №613 (10×10 квадрат дээр 0.25, 5%, 1/4-ийг будах).|Хулганаар чирч олон нүд будна; дахин дарвал арилна. Нэг мөр = 10 нүд = 10%.|Зорилго бүрийг сурагч самбар дээр гарч будна: 43% → 43 нүд; 0.25 → 25 нүд; 5% → 5 нүд; 3/4 = 75/100 → 75 нүд; 1/2 = 50/100 → 50 нүд; 1/100 → 1 нүд.|⭐ сурагчдад 'мөрийн шошго' товчийг асааж өгнө.|Асуух: 0.25 ба 1/4 яагаад ижил олон нүд вэ? (25/100 = 1/4).">
+  <div class="inner">
+    <h2><span class="lvtag">LV 1</span> 100 нүдний ертөнц</h2>
+    <p class="sub">Ертөнц 100 нүдтэй. Зорилгод тохирох тооны нүдийг <b>чирж будаарай</b>. 1 нүд = 1%.</p>
+    <div class="grid2 g46">
+      <div class="g100wrap"><div class="rlab" id="rlab"></div><div class="g100" id="g1"></div></div>
+      <div style="display:flex;flex-direction:column;min-height:0">
+        <div class="card">
+          <h3>🎯 Зорилго <span id="t1n" class="muted" style="font-size:15px"></span></h3>
+          <div class="target" id="t1"></div>
+          <div class="readout" id="r1"></div>
+          <div class="row">
+            <button class="btn" id="c1">✓ Шалгах</button>
+            <button class="btn cyan" id="n1">▶ Дараах</button>
+            <button class="btn ghost sm" id="x1">🧽 Арилгах</button>
+            <button class="btn ghost sm" id="h1">⭐ Мөрийн шошго</button>
+          </div>
+          <div class="feedback" id="f1"></div>
+          <div class="tlist" id="tl1"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. LEVEL 2 -->
+<section class="slide" data-name="Түвшин 2 · Цэнэг" data-lv="2" data-min="4"
+  data-notes="Сурах бичиг х.121, №612 (тоон шулуун дээрх сум ямар тоог зааж байна) — батарей бол хэвтээ тоон шулуун.|Зүүн тал: цэнэгийг уншина. ⭐ горим: 10-ын хуваалт; ⭐⭐⭐ горим: хагас нүд (5%-иар).|Баруун тал: гулсуурыг зөөж зорилгын тоог процентоор тохируулна: 0.35 = 35%, 1/4 = 25%, 3/5 = 60%, 0.08 = 8%, 7/10 = 70%, 0.5 = 50%, 9/20 = 45%.|Асуух: Утасны цэнэг 100% бол бүтэн, 50% бол хагас — бутархайгаар хэд вэ?">
+  <div class="inner">
+    <h2><span class="lvtag">LV 2</span> 🔋 Цэнэг</h2>
+    <div class="grid2">
+      <div class="card">
+        <div class="row" style="justify-content:space-between"><h3 style="margin:0">👀 Цэнэгийг унш</h3>
+          <div class="row"><button class="btn ghost sm on" data-bm="1">⭐</button><button class="btn ghost sm" data-bm="3">⭐⭐⭐</button><button class="btn cyan sm" id="bNew">🎲 Шинэ</button></div></div>
+        <div id="bReads" style="margin-top:8px"></div>
+        <div class="feedback" id="bFb"></div>
+      </div>
+      <div class="card">
+        <h3>🎚️ Цэнэг тохируул</h3>
+        <div class="row" style="font-size:22px;font-weight:700">Цэнэгийг <span class="target" id="sTgt" style="margin:0 6px;padding:4px 12px;font-size:22px"></span> болго!</div>
+        <div class="bat big" style="margin-top:10px"><div class="fl" id="sFill"></div><div class="tk"></div></div>
+        <div class="scale"><span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50</span><span>60</span><span>70</span><span>80</span><span>90</span><span>100</span></div>
+        <input type="range" id="sR" min="0" max="100" step="1" value="0">
+        <div class="readout" id="sOut"></div>
+        <div class="row"><button class="btn" id="sChk">✓ Шалгах</button><button class="btn cyan" id="sNew">🎲 Шинэ зорилго</button></div>
+        <div class="feedback" id="sFb"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. LEVEL 3 -->
+<section class="slide" data-name="Түвшин 3 · Хувиргагч портал" data-lv="3" data-min="6"
+  data-notes="Сурах бичиг х.121 №2 жишээ (1/5 = 20/100 = 20%, 1 7/25 = 128/100 = 128%), х.122 №618 (3/4 = 75/100 = 75%), №619 (тэнцүү бутархай, процентуудыг бичих).|Дүрэм: аравтын бутархайг ×100; энгийн бутархайг 100 хуваарьтай тэнцүү бутархайд шилжүүлнэ.|Портал: шар картыг чирж (эсвэл дараад, дараа нь портал дээр дарж) зөв процент руу оруулна. Хариу: 25%: 0.25, 1/4, 2/8 · 40%: 0.4, 2/5, 4/10 · 50%: 0.5, 1/2, 3/6 · 60%: 0.6, 3/5, 6/10 · 75%: 0.75, 3/4.|Хувиргагч машин: ⭐ — аравтын ↔ процент; ⭐⭐⭐ — энгийн ба холимог бутархай → процент (1 7/25 = 128%).">
+  <div class="inner">
+    <h2><span class="lvtag">LV 3</span> 🌀 Хувиргагч портал</h2>
+    <div class="grid2 g64">
+      <div class="card" style="display:flex;flex-direction:column">
+        <div class="sub" style="margin:0 0 6px">Карт бүрийг тэнцүү процентын портал руу оруул. <b>0.4 × 100 = 40%</b> · <span class="fr"><b>3</b><i>4</i></span> = <span class="fr"><b>75</b><i>100</i></span> = 75%</div>
+        <div class="portals" id="portals"></div>
+        <div class="tray" id="tray"></div>
+        <div class="feedback" id="pFb"></div>
+      </div>
+      <div class="card">
+        <div class="row" style="justify-content:space-between"><h3 style="margin:0">⚙️ Хувиргагч машин</h3>
+          <div class="row"><button class="btn ghost sm on" data-cm="1">⭐</button><button class="btn ghost sm" data-cm="3">⭐⭐⭐</button></div></div>
+        <div class="def c" style="font-size:17px">Аравтын → %: <b>× 100</b> &nbsp;·&nbsp; % → аравтын: <b>: 100</b></div>
+        <div class="def g" style="font-size:17px">Бутархай → %: хуваарийг <b>100</b> болго: <span class="fr"><b>1</b><i>5</i></span> = <span class="fr"><b>1×20</b><i>5×20</i></span> = <span class="fr"><b>20</b><i>100</i></span> = 20%</div>
+        <div class="machine"><div class="q" id="mQ"></div></div>
+        <div class="row"><button class="btn" id="mChk">✓ Хувиргах</button><button class="btn cyan" id="mNew">🎲 Шинэ</button></div>
+        <div class="feedback" id="mFb"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. LEVEL 4 -->
+<section class="slide" data-name="Түвшин 4 · Эрдэнэс цуглуул" data-lv="4" data-min="6"
+  data-notes="Сурах бичиг х.122 'Процентын үндсэн бодлого' (хоногийн 25% = 24 × 0.25 = 6 цаг), №614а (2 км-ийн 10% = 200 м), №615а (40 т-ийн 50% = 20 т = 20 000 кг), №617 (3000-ын 20% = 600).|Туузан загвар: бүхэл = 100%. Хэсгийн тоо = 100 : (нэг хэсгийн %). Жишээ нь 25% → 4 хэсэг; 80 : 4 = 20.|Сурагч эхлээд хэдэн хэсэг цуглуулахаа хэлээд, хэсгүүд дээр дарж зоос цуглуулна, дараа нь хариугаа бичнэ.|2 арга: 25% = 0.25 → 80 × 0.25 = 20; эсвэл 80 : 100 × 25 = 20.|🎲 ⭐ — 10%, 25%, 50%; 🎲 ⭐⭐⭐ — 5%, 20%, 30%, 40%, 60%, 75%.">
+  <div class="inner">
+    <h2><span class="lvtag">LV 4</span> 💎 Эрдэнэс цуглуул</h2>
+    <div class="row" style="justify-content:space-between">
+      <div class="probtabs" id="tabs4"></div>
+      <div class="row"><button class="btn gold sm" id="g4a">🎲 ⭐</button><button class="btn pink sm" id="g4b">🎲 ⭐⭐⭐</button></div>
+    </div>
+    <div class="card" style="margin-top:8px;flex:1;display:flex;flex-direction:column;min-height:0">
+      <div class="qtext" id="q4"></div>
+      <svg class="barsvg" id="bar4" viewBox="0 0 1000 200"></svg>
+      <div class="row" style="justify-content:space-between">
+        <div class="calc">Хариу: <input class="inp" id="i4" inputmode="decimal" placeholder="?"> <span id="u4"></span> <button class="btn" id="c4">✓</button> <button class="btn ghost sm" id="h4">💡 Арга</button></div>
+        <div class="feedback" id="f4" style="margin:0"></div>
+      </div>
+      <div class="ans def g" id="a4"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7. LEVEL 5 BOSS -->
+<section class="slide" data-name="Түвшин 5 · БОСС: Хямдралын луу" data-lv="BOSS" data-min="8"
+  data-notes="Сурах бичиг х.121 №616 (50% = 1200₮ → 2400₮), х.122 №620 (24 хөвгүүн = 40% → 60 сурагч), 'Процентын үндсэн бодлого' (6 цаг нь 24 цагийн 25%), х.123 №622 (25% = 250 000₮ → 1 000 000₮), №623 (125% = 530 → 424 төлөвлөгөө, 106 илүү), №626 хямдралтай дэлгүүр (4000₮-ийн 20% хямдрал → 3200₮).|Анги бүхэлдээ нэг баатар: бодлого бүрийг хосоороо бодоод, нэг сурагч хариуг оруулна. Зөв бол луугийн HP 20%-иар буурна. Буруу бол ❤️ хасагдана (тусламж 💡 харж болно).|⭐⭐⭐ бонус бодлого (№623) — хурдан бодсон сурагчдад.|Дэлгүүрийн бусад үнэ (№626): 1200₮−15% = 1020₮; 5000₮−10% = 4500₮; 8000₮−50% = 4000₮; 3500₮−8% = 3220₮.">
+  <div class="inner">
+    <h2><span class="lvtag" style="background:var(--red);color:#fff">BOSS</span> 🐉 Хямдралын луу</h2>
+    <div class="grid2 g46">
+      <div class="arena">
+        <div class="row" style="justify-content:space-between"><span class="px" style="font-size:11px;color:var(--red)">ЛУУГИЙН HP</span><span class="hearts" id="hearts"></span></div>
+        <div class="hp"><div class="f" id="hpF"></div><div class="t" id="hpT">100%</div></div>
+        <div><span class="dragon" id="dragon">🐉</span></div>
+        <div class="shop" id="shop"></div>
+        <div class="feedback" id="bossFb" style="text-align:center"></div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column">
+        <div class="probtabs" id="tabs5"></div>
+        <div class="qtext" id="q5" style="min-height:90px"></div>
+        <div class="calc"><input class="inp" id="i5" inputmode="decimal" placeholder="?" style="width:150px"> <span id="u5"></span> <button class="btn pink" id="c5">⚔️ Довтлох</button> <button class="btn ghost sm" id="h5">💡 Туузан загвар</button></div>
+        <div class="ans" id="a5"><div class="minibar" id="mb5"></div><div id="mt5" style="font-size:17px"></div></div>
+        <div class="feedback" id="f5"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8. LEVEL COMPLETE -->
+<section class="slide" data-name="Level Complete!" data-lv="★" data-min="2"
+  data-notes="Түвшин бүрийн XP-г процентоор харна (жишээ нь 64/80 = 80%).|Асуух: Ангийн нийт XP 400-ийн хэд вэ? 10×10 тор дээр хэдэн нүд будагдсан бэ? Хэдэн хувь вэ? (XP : 4 = %).|Сурагчид 1–3 одоор өөрийгөө үнэлнэ: ⭐ — 1% гэж юу болохыг мэднэ; ⭐⭐ — аравтын, энгийн бутархайг процентод шилжүүлнэ; ⭐⭐⭐ — процентын бодлого бодно.">
+  <div class="inner">
+    <div class="lc">LEVEL COMPLETE!</div>
+    <div class="grid2 g64">
+      <div class="card">
+        <h3>🏆 Түвшин бүрийн XP — хэдэн хувь?</h3>
+        <div class="badges" id="badges"></div>
+        <div class="def" id="lcSum" style="margin-top:10px;font-size:20px"></div>
+        <h3 style="margin-top:8px">🌟 Өөрийгөө үнэл</h3>
+        <div class="stars3" id="stars3"><button>⭐</button><button>⭐</button><button>⭐</button></div>
+        <div class="sub" style="text-align:center;margin:4px 0 0" id="starTxt">1 од — 1% гэж юу вэ мэднэ · 2 — хувиргана · 3 — бодлого бодно</div>
+      </div>
+      <div class="card" style="text-align:center">
+        <h3>🧮 XP мөр = 100 нүд</h3>
+        <div class="g100wrap"><div class="g100 mini" id="gXP"></div></div>
+        <div class="readout" id="xpRead" style="font-size:20px"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 9. EXIT + HOMEWORK -->
+<section class="slide" data-name="Гарах шалгалт ба гэрийн даалгавар" data-lv="END" data-min="4"
+  data-notes="Гарах шалгалт: 4 богино асуулт — сурагч бүр дэвтэртээ бичээд, дараа нь самбар дээр шалгана. 🎲 товч шинэ тоо үүсгэнэ.|Гэрийн даалгавар (х.121–123): ⭐ №614 (а. 200 м; б. 43 м-ийн 25% = 10.75 м = 1075 см), №615 (а. 20 000 кг; б. 500 г нь 2 кг-ын 25%), №618 (75%).|⭐⭐⭐ нэмэлт: №621 (анги 24 хөвгүүн... — үлгэр №620-той төстэй), №624 (ногооны талбай — диаграмаас уншина), №625.|Дараагийн хичээлд №626 'Хямдралтай дэлгүүр' тоглоомыг хосоороо тоглож болно.">
+  <div class="inner">
+    <h2><span class="lvtag">EXIT</span> 🚪 Гарах шалгалт</h2>
+    <div class="grid2 g64">
+      <div>
+        <div class="exq" id="exq"></div>
+        <div class="row" style="margin-top:8px"><button class="btn cyan sm" id="exNew">🎲 Шинэ асуултууд</button><span class="feedback" id="exFb" style="margin:0"></span></div>
+      </div>
+      <div class="card">
+        <h3>🏠 Гэрийн даалгавар (х.121–123)</h3>
+        <ul class="hw" style="padding-left:20px;margin:0">
+          <li><b>⭐ Заавал:</b> №614 (а, б), №615 (а, б)</li>
+          <li><b>⭐ Заавал:</b> №618 — ах бялууны <span class="fr"><b>3</b><i>4</i></span>-ыг идэв. Хэдэн процент?</li>
+          <li><b>⭐⭐⭐ Сонгон:</b> №623 эсвэл №624 (ногооны талбайн диаграм)</li>
+          <li><b>🎮 Бонус:</b> Өөрийн "процентын луу"-гийн бодлого зохиож ирээрэй!</li>
+        </ul>
+        <div class="def g" style="margin-top:10px">🗝️ Санах: <b>1% = <span class="fr"><b>1</b><i>100</i></span></b> · аравтын × 100 = % · бутархайг <span class="fr"><b>?</b><i>100</i></span> болго</div>
+        <div class="big" style="text-align:center;font-size:16px;margin-top:8px">GAME SAVED ✓</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<nav class="nav">
+  <button class="btn ghost" id="prevBtn">◀ Өмнөх</button>
+  <div class="dots" id="dots"></div>
+  <button class="btn" id="nextBtn">Дараах ▶</button>
+</nav>
+
+<div class="tnotes" id="tnotes"><h4>📝 Багшид зориулсан зөвлөмж</h4><ul id="tnList"></ul></div>
+<canvas id="confetti"></canvas>
+
+<script>
+/* ---------- Helpers ---------- */
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const $=id=>document.getElementById(id);
+const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+const fmt=n=>{const s=String(n).split('.');s[0]=s[0].replace(/\B(?=(\d{3})+(?!\d))/g,' ');return s.join('.')};
+const dec=x=>String(+x.toFixed(4));
+const fr=(a,b)=>`<span class="fr"><b>${a}</b><i>${b}</i></span>`;
+const num=s=>{s=String(s).replace(/\s/g,'').replace(',','.').replace('%','');return s===''?NaN:Number(s)};
+const near=(a,b)=>Math.abs(a-b)<1e-9;
+function mark(inp,fb,ok,okMsg,noMsg){inp.className='inp '+(ok?'ok':'no');fb.className='feedback '+(ok?'ok':'no');fb.innerHTML=ok?okMsg:noMsg;if(!ok){inp.classList.add('shake');setTimeout(()=>inp.classList.remove('shake'),400)}}
+document.querySelectorAll('.slide').forEach(s=>s.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT'){const b=e.target.parentElement.querySelector('button');if(b)b.click()}}));
+
+/* ---------- XP / coins (XP bar is itself a % model) ---------- */
+const XPCAP=80,XPMAX=400;const XP=[0,0,0,0,0,0];let coins=0;
+function xpTotal(){return XP.reduce((a,b)=>a+b,0)}
+function updXP(){const t=xpTotal(),p=t/XPMAX*100;$('xpFill').style.width=p+'%';$('xpText').textContent=`${t}/${XPMAX} = ${dec(p)}%`;$('coinN').textContent=coins}
+function pop(text,col){const d=document.createElement('div');d.className='xpPop';d.textContent=text;if(col)d.style.color=col;d.style.left=(innerWidth/2-80+ri(-60,60))+'px';d.style.top=(innerHeight*.4)+'px';document.body.appendChild(d);setTimeout(()=>d.remove(),1200)}
+function award(lv,n,c=1){coins+=c;const add=Math.max(0,Math.min(n,XPCAP-XP[lv]));XP[lv]+=add;updXP();pop(add?`+${add} XP`:`+${c} 🟡`,add?null:'#ffd23f');if(add&&XP[lv]===XPCAP){setTimeout(()=>{pop('LEVEL CLEAR!','#ff3ea5');confetti(110)},500)}else confetti(30)}
+
+/* ---------- Slides ---------- */
+const slides=[...document.querySelectorAll('.slide')];const dots=$('dots');let cur=0;
+slides.forEach((s,i)=>{const b=document.createElement('button');b.className='dot';b.textContent=String(i+1).padStart(2,'0');b.title=s.dataset.name;b.onclick=()=>go(i);dots.appendChild(b)});
+function go(i){
+  cur=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,j)=>s.classList.toggle('active',j===cur));
+  [...dots.children].forEach((d,j)=>{d.classList.toggle('on',j===cur);d.classList.toggle('done',j<cur)});
+  const s=slides[cur];
+  $('stageName').textContent=s.dataset.name;$('sheetNo').textContent=(cur+1)+'/'+slides.length;
+  const lv=s.dataset.lv;$('lvTag').textContent=/^\d$/.test(lv)?(lv==='0'?'QUEST':'LV '+lv):lv;
+  $('tnList').innerHTML='<li>⏱ Зөвлөмж хугацаа: ≈'+s.dataset.min+' мин</li>'+s.dataset.notes.split('|').map(t=>'<li>'+t+'</li>').join('');
+  $('prevBtn').disabled=cur===0;$('nextBtn').textContent=cur===slides.length-1?'🏁 GAME OVER':'Дараах ▶';
+  if(s.contains($('badges')))lcRender();
+  if(s.contains($('wmap')))mapRender();
+}
+$('prevBtn').onclick=()=>go(cur-1);$('nextBtn').onclick=()=>{if(cur===slides.length-1){confetti(150);pop('GG! 🏆','#ffd23f')}else go(cur+1)};
+document.addEventListener('keydown',e=>{
+  const t=e.target;if(t.isContentEditable||t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT')return;
+  if(e.key==='ArrowRight'||e.key==='PageDown')go(cur+1);
+  else if(e.key==='ArrowLeft'||e.key==='PageUp')go(cur-1);
+  else if(e.key==='f'||e.key==='F')toggleFS();
+  else if(e.key==='n'||e.key==='N')toggleNotes();
+});
+function toggleFS(){if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.()}
+function toggleNotes(){$('tnotes').classList.toggle('show')}
+$('fsBtn').onclick=toggleFS;$('notesBtn').onclick=toggleNotes;$('pressStart').onclick=()=>go(1);
+
+/* ---------- Timer ---------- */
+let remain=40*60,running=false,tick=null;
+function drawT(){const a=Math.abs(remain),m=Math.floor(a/60),s=a%60;$('tval').textContent=(remain<0?'+':'')+m+':'+String(s).padStart(2,'0');$('timer').className='timer'+(remain<0?' over':remain<=300?' warn':'')}
+$('tPlay').onclick=()=>{running=!running;$('tPlay').textContent=running?'⏸':'▶';if(running)tick=setInterval(()=>{remain--;drawT()},1000);else clearInterval(tick)};
+$('timer').ondblclick=()=>{remain=40*60;drawT()};drawT();
+
+/* ---------- Intro pixel art ---------- */
+function pxDraw(svg,rows,cols){rows.forEach((r,y)=>[...r].forEach((ch,x)=>{if(ch!=='.'){const e=document.createElementNS('http://www.w3.org/2000/svg','rect');e.setAttribute('x',x);e.setAttribute('y',y);e.setAttribute('width',1);e.setAttribute('height',1);e.setAttribute('fill',cols[ch]);svg.appendChild(e)}}))}
+pxDraw($('pxPct'),['##.....#.','##....#..','.....#...','....#....','...#.....','..#......','.#....##.','#.....##.','.........'],{'#':'#39ff14'});
+pxDraw($('pxCoin'),['..ooooo..','.oyyyyyo.','oyywyyyyo','oywyyyyyo','oyyyyyydo','oyyyyyydo','.oyyyddo.','..ooooo..','.........'],{o:'#7a5a00',y:'#ffd23f',w:'#fff6b0',d:'#c99a00'});
+
+/* ================= Mission: ring toss ================= */
+const TB='ОХОХОООХ',TO='ОХОООХХООХ';
+function tossRow(id,name,s){$(id).innerHTML=`<td class="nm">${name}</td>`+[...Array(10)].map((_,i)=>`<td class="rg">${s[i]?(s[i]==='О'?'⭕':'❌'):''}</td>`).join('')+`<td><b>${[...s].filter(c=>c==='О').length} / ${s.length}</b></td>`}
+tossRow('tossB','👦 Бат',TB);tossRow('tossO','👧 Оргил',TO);
+let guess=null;
+document.querySelectorAll('[data-who]').forEach(b=>b.onclick=()=>{guess=b.dataset.who;document.querySelectorAll('[data-who]').forEach(x=>x.classList.toggle('on',x===b))});
+$('tossCmp').onclick=()=>{$('tossRes').style.display='block';setTimeout(()=>{$('cbB').style.width='62.5%';$('cbO').style.width='60%'},50);const f=$('tossFb');
+  if(guess==='b'){f.className='feedback ok';f.innerHTML='🎉 Зөв! 0.625 > 0.6 тул <b>Бат</b> илүү амжилттай. Оролдлого цөөн ч хувь нь их!';confetti(60);coins++;updXP()}
+  else if(guess){f.className='feedback no';f.innerHTML='😮 Оргил илүү олон оруулсан ч <b>Бат</b>-ын хувь их: 62.5% > 60%.'}
+  else{f.className='feedback';f.innerHTML='Бат илүү амжилттай: 62.5% > 60%.'}};
+const LV=[['1','100 нүд',2],['2','Цэнэг',3],['3','Портал',4],['4','Эрдэнэс',5],['BOSS','Луу',6]];
+function mapRender(){$('wmap').innerHTML=LV.map(([n,t,s],i)=>`${i?'<span class="ar">▶</span>':''}<button class="node${n==='BOSS'?' boss':''}${XP[i+1]>=XPCAP?' clr':''}" data-go="${s}"><span class="n">${n==='BOSS'?'BOSS':'LV '+n}</span>${t}</button>`).join('');
+  $('wmap').querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(+b.dataset.go))}
+
+/* ================= Level 1: 100 cells ================= */
+const g1=$('g1');for(let i=0;i<100;i++){const d=document.createElement('div');d.className='cell';g1.appendChild(d)}
+$('rlab').innerHTML=[...Array(10)].map((_,i)=>`<span>${(i+1)*10}%</span>`).join('');
+let paint=null;
+g1.addEventListener('pointerdown',e=>{const c=e.target.closest('.cell');if(!c)return;e.preventDefault();paint=!c.classList.contains('on');c.classList.toggle('on',paint);try{g1.setPointerCapture(e.pointerId)}catch(_){}upd1()});
+g1.addEventListener('pointermove',e=>{if(paint===null)return;const t=document.elementFromPoint(e.clientX,e.clientY);const c=t&&t.closest?t.closest('.cell'):null;if(c&&g1.contains(c)&&c.classList.contains('on')!==paint){c.classList.toggle('on',paint);upd1()}});
+addEventListener('pointerup',()=>{paint=null});addEventListener('pointercancel',()=>{paint=null});
+const T1=[{s:'43%',n:43},{s:'0.25',n:25},{s:'5%',n:5},{s:fr(3,4),n:75},{s:fr(1,2),n:50},{s:fr(1,100),n:1}];
+let t1=0;const done1=new Set();
+const cnt1=()=>g1.querySelectorAll('.cell.on').length;
+function upd1(){const n=cnt1();$('r1').innerHTML=`${n} нүд = ${fr(n,100)} = ${dec(n/100)} = <span style="color:var(--neon)">${n}%</span>`}
+function show1(){$('t1').innerHTML=T1[t1].s;$('t1n').textContent=`(${t1+1}/${T1.length})`;$('f1').textContent='';
+  $('tl1').innerHTML=T1.map((t,i)=>`<span class="${done1.has(i)?'done':''}${i===t1?' cur':''}">${t.n}%</span>`).join('')}
+$('c1').onclick=()=>{const n=cnt1(),T=T1[t1],f=$('f1');if(n===T.n){f.className='feedback ok';f.innerHTML=`🎉 Зөв! ${T.n} нүд = ${fr(T.n,100)} = ${dec(T.n/100)} = ${T.n}%`;if(!done1.has(t1)){done1.add(t1);award(1,16)}show1Done()}
+  else{f.className='feedback no';f.innerHTML=`🤔 ${n} нүд будсан байна. ${n<T.n?'Цөөн':'Олон'} байна — ${T.n>=10?'нэг мөр = 10 нүд гэдгийг санаарай.':'дахин тоол.'}`}};
+function show1Done(){$('tl1').innerHTML=T1.map((t,i)=>`<span class="${done1.has(i)?'done':''}${i===t1?' cur':''}">${t.n}%</span>`).join('')}
+$('n1').onclick=()=>{t1=(t1+1)%T1.length;g1.querySelectorAll('.cell').forEach(c=>c.classList.remove('on'));upd1();show1()};
+$('x1').onclick=()=>{g1.querySelectorAll('.cell').forEach(c=>c.classList.remove('on'));upd1();$('f1').textContent=''};
+$('h1').onclick=()=>{$('rlab').classList.toggle('show');$('h1').classList.toggle('on')};
+upd1();show1();
+
+/* ================= Level 2: batteries ================= */
+let bMode=1;
+function batCol(v){return v<20?'var(--red)':v<50?'var(--gold)':'var(--neon)'}
+function bGen(){const vals=new Set();while(vals.size<3)vals.add(bMode===1?ri(1,9)*10:ri(1,19)*5);
+  $('bReads').innerHTML=[...vals].map((v,i)=>`<div class="brow"><div><div class="bat"><div class="fl" style="width:calc(${v}% - 6px * ${v/100});background:${batCol(v)}"></div><div class="tk"></div></div><div class="scale"><span>0%</span><span>50%</span><span>100%</span></div></div>
+    <div class="calc"><input class="inp" style="width:80px" data-bv="${v}" inputmode="numeric" placeholder="?">% <button class="btn sm">✓</button></div></div>`).join('');
+  $('bReads').querySelectorAll('.brow').forEach(r=>{const inp=r.querySelector('input'),b=r.querySelector('button');b.onclick=()=>{const v=+inp.dataset.bv,ok=num(inp.value)===v;
+    mark(inp,$('bFb'),ok,`🔋 Зөв! ${v}% = ${fr(v,100)} = ${dec(v/100)}`,'🤔 Нэг хэсэг = 10%. Хэдэн хэсэг дүүрсэн бэ?');if(ok&&!inp.dataset.got){inp.dataset.got=1;award(2,8)}}});$('bFb').textContent=''}
+document.querySelectorAll('[data-bm]').forEach(b=>b.onclick=()=>{bMode=+b.dataset.bm;document.querySelectorAll('[data-bm]').forEach(x=>x.classList.toggle('on',x===b));bGen()});
+$('bNew').onclick=bGen;
+const ST=[{t:'0.35',v:35},{t:fr(1,4),v:25},{t:fr(3,5),v:60},{t:'0.08',v:8},{t:fr(7,10),v:70},{t:'0.5',v:50},{t:fr(9,20),v:45},{t:'0.9',v:90}];
+let sT=ST[0];
+function sUpd(){const v=+$('sR').value;$('sFill').style.width=`calc(${v}% - 6px * ${v/100})`;$('sFill').style.background=batCol(v);$('sOut').innerHTML=`${v}% = ${fr(v,100)} = ${dec(v/100)}`}
+function sNew(){let n;do{n=pick(ST)}while(n===sT);sT=n;$('sTgt').innerHTML=sT.t;$('sR').value=0;$('sFb').textContent='';sUpd()}
+$('sR').oninput=sUpd;$('sNew').onclick=sNew;
+$('sChk').onclick=()=>{const v=+$('sR').value,f=$('sFb');if(v===sT.v){f.className='feedback ok';f.innerHTML=`⚡ Бүрэн зөв! ${sT.t} = ${fr(v,100)} = ${v}%`;if(!sT.got){sT.got=1;award(2,8)}}
+  else{f.className='feedback no';f.innerHTML=`🤔 ${v}% биш. Зорилгыг 100 хуваарьтай болгоод үз: ${String(sT.t).includes('fr')?'хүртвэр, хуваарийг ижил тоогоор үржүүл.':'аравтын бутархайг × 100.'}`}};
+bGen();sT=ST[1];sNew();
+
+/* ================= Level 3: portals ================= */
+const PG={25:['0.25',fr(1,4),fr(2,8)],40:['0.4',fr(2,5),fr(4,10)],50:['0.5',fr(1,2),fr(3,6)],60:['0.6',fr(3,5),fr(6,10)],75:['0.75',fr(3,4)]};
+let selChip=null;
+$('portals').innerHTML=Object.keys(PG).map(p=>`<div class="portal" data-p="${p}"><div class="pl">${p}%</div><div class="in"></div></div>`).join('');
+const chips=[];Object.entries(PG).forEach(([p,a])=>a.forEach(h=>chips.push([+p,h])));
+$('tray').innerHTML=shuffle(chips).map(([p,h],i)=>`<div class="chip" draggable="true" data-v="${p}" id="ch${i}">${h}</div>`).join('');
+function tryDrop(chip,portal){const p=+portal.dataset.p,v=+chip.dataset.v,f=$('pFb');
+  if(p===v){chip.classList.remove('sel');chip.classList.add('done');chip.draggable=false;portal.querySelector('.in').appendChild(chip);f.className='feedback ok';f.innerHTML=`✨ ${chip.innerHTML} = ${fr(v,100)} = ${v}%`;award(3,4);selChip=null;
+    if(!$('tray').querySelector('.chip')){f.innerHTML='🌀 Бүх портал нээгдлээ! Нэг процентод олон бутархай тэнцүү байдаг.';confetti(120)}}
+  else{portal.classList.add('shake');setTimeout(()=>portal.classList.remove('shake'),400);f.className='feedback no';f.innerHTML=`🚫 ${chip.innerHTML} ≠ ${p}%. Хуваарийг 100 болгоод (эсвэл × 100) дахин үз.`}}
+$('tray').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c||c.classList.contains('done'))return;selChip=c===selChip?null:c;$('tray').querySelectorAll('.chip').forEach(x=>x.classList.toggle('sel',x===selChip))});
+$('tray').addEventListener('dragstart',e=>{const c=e.target.closest('.chip');if(c)e.dataTransfer.setData('text/plain',c.id)});
+document.querySelectorAll('.portal').forEach(p=>{
+  p.addEventListener('click',()=>{if(selChip)tryDrop(selChip,p)});
+  p.addEventListener('dragover',e=>{e.preventDefault();p.classList.add('hot')});
+  p.addEventListener('dragleave',()=>p.classList.remove('hot'));
+  p.addEventListener('drop',e=>{e.preventDefault();p.classList.remove('hot');const c=$(e.dataTransfer.getData('text/plain'));if(c&&!c.classList.contains('done'))tryDrop(c,p)})});
+/* converter machine */
+let cMode=1,mq=null;
+const HARD=[[1,5,0],[2,5,0],[3,4,0],[7,25,0],[9,20,0],[3,50,0],[1,25,0],[13,20,0],[17,50,0],[7,25,1],[1,4,1],[1,2,2],[3,10,1]];
+function mNew(){const i=$('mInp');if(cMode===1){if(Math.random()<.55){const v=pick([ri(1,9),ri(11,99),ri(11,99),pick([10,20,30,40,50,60,70,80,90])]);mq={html:`${dec(v/100)} =`,suf:'%',ans:v,sol:`${dec(v/100)} × 100 = ${v}%`}}
+    else{const v=pick([ri(1,9),ri(11,99),ri(11,99),pick([120,150])]);mq={html:`${v}% =`,suf:'(аравтын)',ans:v/100,sol:`${v} : 100 = ${dec(v/100)}`}}}
+  else{const [a,b,w]=pick(HARD),k=100/b,top=(w*b+a)*k;mq={html:`${w?w+' ':''}${fr(a,b)} =`,suf:'%',ans:top,sol:`${w?w+' ':''}${fr(a,b)} = ${w?w+' ':''}${fr(a+'×'+k,b+'×'+k)} = ${w?w+' ':''}${fr(a*k,100)} = ${fr(top,100)} = ${top}%`}}
+  $('mQ').innerHTML=`${mq.html} <input class="inp" id="mInp" inputmode="decimal" placeholder="?"> <span style="font-size:20px">${mq.suf}</span>`;$('mFb').textContent='';mq.got=false}
+$('mChk').onclick=()=>{const i=$('mInp'),ok=near(num(i.value),mq.ans);mark(i,$('mFb'),ok,'⚙️ Зөв! '+mq.sol,'🔧 Дахин үз. Тусламж: '+mq.sol.replace(/= [^=]*$/,'= ?'));if(ok&&!mq.got){mq.got=true;award(3,8)}};
+$('mNew').onclick=mNew;
+$('mQ').addEventListener('keydown',e=>{if(e.key==='Enter')$('mChk').click()});
+document.querySelectorAll('[data-cm]').forEach(b=>b.onclick=()=>{cMode=+b.dataset.cm;document.querySelectorAll('[data-cm]').forEach(x=>x.classList.toggle('on',x===b));mNew()});
+mNew();
+
+/* ================= Level 4: bar model ================= */
+const P4=[
+  {tab:'80-ийн 25%',q:'Эрдэнэсийн сан 80 алттай. Түүний <b>25%</b>-ийг ав! Хэдэн алт вэ?',whole:80,unit:'алт',pct:25,ans:20,au:'алт',sol:'25% = 0.25 → 80 × 0.25 = 20. Эсвэл 80 : 4 = 20 (25% = 1/4).'},
+  {tab:'№614а',q:'2 км-ийн <b>10%</b> нь хэдэн метр вэ? (2 км = 2000 м)',whole:2000,unit:'м',pct:10,ans:200,au:'м',sol:'2 км = 2000 м. 10% = 0.1 → 2000 × 0.1 = 200 м.'},
+  {tab:'№617',q:'3000-ын <b>20%</b> нь хэдтэй тэнцүү вэ?',whole:3000,unit:'',pct:20,ans:600,au:'',sol:'20% = 0.2 → 3000 × 0.2 = 600. Эсвэл 3000 : 5 = 600 (20% = 1/5).'},
+  {tab:'№615а',q:'40 тонны <b>50%</b> нь хэдэн килограмм бэ? (1 т = 1000 кг)',whole:40,unit:'т',pct:50,ans:20000,au:'кг',sol:'40 т-ийн 50% = 40 : 2 = 20 т = 20 000 кг.'},
+  {tab:'Хоногийн 25%',q:'Ах хоногийн <b>25%</b>-ийг сургууль дээрээ өнгөрүүлдэг. Хоногт 24 цаг. Хэдэн цаг вэ?',whole:24,unit:'цаг',pct:25,ans:6,au:'цаг',sol:'25% = 0.25 → 24 × 0.25 = 6 цаг (х.122).'}
+];
+let p4=null,col4=new Set();
+function tabs4(){$('tabs4').innerHTML=P4.map((p,i)=>`<button class="btn ghost${p===p4?' on':''}${p.got?' done':''}" data-p4="${i}">${p.got?'✓ ':''}${p.tab}</button>`).join('');$('tabs4').querySelectorAll('[data-p4]').forEach(b=>b.onclick=()=>load4(P4[+b.dataset.p4]))}
+function load4(p){p4=p;col4=new Set();$('q4').innerHTML=p.q;$('u4').textContent=p.au;$('i4').value='';$('i4').className='inp';$('f4').textContent='';$('a4').classList.remove('show');$('a4').innerHTML='💡 '+p.sol;tabs4();draw4()}
+function gen4(hard){const pct=hard?pick([5,20,30,40,60,75]):pick([10,25,50]);const parts=100/gcd(pct,100);const whole=parts*(hard?ri(2,15):ri(2,12))*(hard&&parts<=5?pick([1,10]):1);
+  const it=pick([['алт',''],['оноо',''],['₮','₮'],['м','м']]);load4({tab:'🎲',q:`${fmt(whole)}${it[0]==='₮'?'₮':' '+it[0]}-ийн <b>${pct}%</b> нь хэд вэ?`,whole,unit:it[1]||it[0],pct,ans:whole*pct/100,au:it[1]||it[0],sol:`${pct}% = ${dec(pct/100)} → ${fmt(whole)} × ${dec(pct/100)} = ${fmt(whole*pct/100)}. Эсвэл ${fmt(whole)} : ${parts} × ${pct/gcd(pct,100)}.`,gen:1})}
+function draw4(){const p=p4,g=gcd(p.pct,100),parts=100/g,take=p.pct/g,each=p.whole/parts,w=960/parts,s=$('bar4');
+  let h=`<text x="500" y="24" text-anchor="middle" fill="#29e0ff" font-size="22" font-weight="900">Бүхэл = ${fmt(p.whole)} ${p.unit} = 100%</text><path d="M20 40 V32 H980 V40" fill="none" stroke="#29e0ff" stroke-width="3"/>`;
+  for(let i=0;i<parts;i++){const x=20+i*w,on=col4.has(i);h+=`<g class="seg" data-i="${i}"><rect x="${x}" y="48" width="${w}" height="76" fill="${on?'#ffd23f':'#2c1650'}" stroke="#fff" stroke-width="3"/>`+
+    (on?`<circle cx="${x+w/2}" cy="72" r="${Math.min(13,w/3)}" fill="#ffd23f" stroke="#7a5a00" stroke-width="3"/>`:'')+
+    (parts<=10?`<text x="${x+w/2}" y="${on?108:92}" text-anchor="middle" fill="${on?'#0b0418':'#fff'}" font-size="${parts>5?18:22}" font-weight="900">${fmt(+each.toFixed(2))}</text>`:'')+
+    `<text x="${x+w/2}" y="146" text-anchor="middle" fill="#c3b1e6" font-size="${parts>10?11:16}" font-weight="700">${g}%</text></g>`}
+  const n=col4.size,goal=n===take;
+  h+=`<text x="500" y="186" text-anchor="middle" fill="${goal?'#39ff14':'#ffd23f'}" font-size="21" font-weight="900">${n?`Цуглуулсан: ${n} хэсэг = ${n*g}%${parts<=10||goal?` = ${fmt(+(n*each).toFixed(2))} ${p.unit}`:''}${goal?' ✓ ЗОРИЛГО!':''}`:`👆 ${p.pct}% цуглуулахын тулд хэсгүүд дээр дар (1 хэсэг = ${g}%)`}</text>`;
+  s.innerHTML=h;s.querySelectorAll('.seg').forEach(e=>e.onclick=()=>{const i=+e.dataset.i;col4.has(i)?col4.delete(i):col4.add(i);draw4()})}
+$('c4').onclick=()=>{const p=p4,ok=near(num($('i4').value),p.ans);mark($('i4'),$('f4'),ok,`💎 Зөв! ${fmt(p.ans)} ${p.au}`,'🤔 Туузан загвараа ашиглаад дахин бод.');if(ok&&!p.got){p.got=1;award(4,p.gen?8:16);tabs4()}};
+$('h4').onclick=()=>$('a4').classList.toggle('show');
+$('g4a').onclick=()=>gen4(false);$('g4b').onclick=()=>gen4(true);
+load4(P4[0]);
+
+/* ================= Level 5: Boss ================= */
+const SHOP=[[1200,15],[4000,20],[5000,10],[8000,50],[3500,8]];
+$('shop').innerHTML=SHOP.map(([p,d])=>`<div>🏷️ <b>${fmt(p)}₮</b><br><i>−${d}%</i></div>`).join('');
+const P5=[
+  {q:'🛒 Луугийн дэлгүүр (№626): <b>4000₮</b>-ийн ном <b>20%</b> хямдарсан. Хямдарсан үнэ хэд вэ?',ans:3200,u:'₮',bar:[[20,'800₮ хямдрал','k'],[80,'? төлөх','q']],t:'Бүхэл 4000₮ = 100%. 20% = 4000 × 0.2 = 800₮. 4000 − 800 = 3200₮.'},
+  {q:'💰 Бат өөрт байгаа мөнгөнийхөө <b>50%</b> буюу <b>1200₮</b>-өөр дэвтэр авсан. Батад анх хэдэн төгрөг байсан бэ? (№616)',ans:2400,u:'₮',bar:[[50,'50% = 1200₮','k'],[50,'50% = 1200₮','e']],t:'50% = 1200₮ → 100% = 1200 × 2 = 2400₮.'},
+  {q:'🏫 Анги <b>24</b> хөвгүүнтэй ба энэ нь бүх сурагчдын <b>40%</b> бол анги хэдэн сурагчтай вэ? (№620)',ans:60,u:'сурагч',bar:[[40,'40% = 24','k'],[60,'60% = ?','e']],t:'40% = 24 → 10% = 24 : 4 = 6 → 100% = 6 × 10 = 60 сурагч.'},
+  {q:'🍎 Эгч сарын цалингийнхаа <b>25%</b> буюу <b>250 000₮</b>-ийг хүнсэнд зориулжээ. Хэдэн төгрөгийн цалин авсан бэ? (№622)',ans:1000000,u:'₮',bar:[[25,'250 000₮','k'],[25,'','e'],[25,'','e'],[25,'','e']],t:'25% = 1/4. 250 000 × 4 = 1 000 000₮.'},
+  {q:'⏰ Ах хоногийн <b>6 цагийг</b> сургууль дээрээ өнгөрүүлдэг. Хоног 24 цаг. Энэ нь хоногийн хэдэн процент вэ? (х.122)',ans:25,u:'%',bar:[[25,'6 цаг','k'],[75,'18 цаг','e']],t:'6/24 = 1/4 = 0.25 → 0.25 × 100 = 25%.'},
+  {q:'⭐⭐⭐ БОНУС: Ажилчин төлөвлөгөөгөө <b>25%</b>-иар давуулан биелүүлж, <b>530</b> цамц оёсон. Төлөвлөснөөс хэдэн цамц <b>илүү</b> оёсон бэ? (№623)',ans:106,u:'цамц',bonus:1,bar:[[100,'төлөвлөгөө = 100%','e'],[25,'илүү 25% = ?','q']],t:'530 цамц = 125% → 25% = 530 : 5 = 106 цамц (төлөвлөгөө = 424).'}
+];
+let p5=0,hp=100,lives=3;
+function boss(){$('hpF').style.width=hp+'%';$('hpT').textContent=hp+'%';$('hearts').textContent='❤️'.repeat(lives)+'🖤'.repeat(3-lives);
+  $('tabs5').innerHTML=P5.map((p,i)=>`<button class="btn ghost${i===p5?' on':''}${p.got?' done':''}" data-p5="${i}">${p.got?'✓':p.bonus?'⭐⭐⭐':i+1}</button>`).join('');
+  $('tabs5').querySelectorAll('[data-p5]').forEach(b=>b.onclick=()=>load5(+b.dataset.p5))}
+function load5(i){p5=i;const p=P5[i];$('q5').innerHTML=p.q;$('u5').textContent=p.u;$('i5').value='';$('i5').className='inp';$('f5').textContent='';$('a5').classList.remove('show');
+  const tot=p.bar.reduce((a,b)=>a+b[0],0);$('mb5').innerHTML=p.bar.map(([w,l,k])=>`<div class="${k}" style="width:${w/tot*100}%">${l}</div>`).join('');$('mt5').innerHTML='💡 '+p.t;boss()}
+$('c5').onclick=()=>{const p=P5[p5],ok=near(num($('i5').value),p.ans),dr=$('dragon');
+  if(ok){mark($('i5'),$('f5'),true,`⚔️ Цохилт! ${fmt(p.ans)} ${p.u} — зөв!`,'');dr.classList.remove('hit');void dr.offsetWidth;dr.classList.add('hit');
+    if(!p.got){p.got=1;if(!p.bonus){hp=Math.max(0,hp-20);award(5,16)}else{award(5,0,5);pop('СУПЕР ЦОХИЛТ!','#ff3ea5')}}
+    if(hp===0){dr.classList.add('dead');$('bossFb').className='feedback ok';$('bossFb').textContent='🏆 Хямдралын луу ялагдлаа! Процентын баатар!';confetti(160)}
+    else $('bossFb').textContent=`Луу ${100-hp}% гэмтлээ!`;
+    const nx=P5.findIndex(q=>!q.got);boss();if(nx>=0)setTimeout(()=>load5(nx),1400)}
+  else{lives=Math.max(0,lives-1);mark($('i5'),$('f5'),false,'',lives?'🔥 Луу гал үлээлээ! Туузан загвар 💡-ийг харж дахин бод.':'💔 Амь дууслаа... гэхдээ баатар бууж өгдөггүй! ❤️ сэргээлээ.');if(!lives)setTimeout(()=>{lives=3;boss()},1200);boss()}};
+$('h5').onclick=()=>$('a5').classList.toggle('show');
+load5(0);
+
+/* ================= Level complete ================= */
+const gx=$('gXP');for(let i=0;i<100;i++){const d=document.createElement('div');d.className='cell';gx.appendChild(d)}
+const LVN=['100 нүд','Цэнэг','Портал','Эрдэнэс','Луу'];
+function lcRender(){$('badges').innerHTML=LVN.map((n,i)=>{const x=XP[i+1];return`<div class="badge${x>=XPCAP?' full':''}"><div class="bn">${i<4?'LV '+(i+1):'BOSS'}</div><div class="bx">${n}</div><div class="bx">${x}/80</div><div class="bp">${dec(x/80*100)}%</div></div>`}).join('');
+  const t=xpTotal(),p=t/4;$('lcSum').innerHTML=`Нийт XP: <b>${t}/400</b> = ${fr(t+' : 4',100)} = <b style="color:var(--neon)">${dec(p)}%</b> &nbsp;·&nbsp; <span class="coin"></span> ${coins} зоос`;
+  [...gx.children].forEach((c,i)=>c.classList.toggle('on',i<Math.round(p)));$('xpRead').innerHTML=`${Math.round(p)} нүд будагдсан = ${dec(p)}%`;if(t)confetti(80)}
+(()=>{const b=[...document.querySelectorAll('#stars3 button')];const set=n=>{b.forEach((x,i)=>x.classList.toggle('on',i<n));store.set('m_pct_stars',n)};b.forEach((x,i)=>x.onclick=()=>{set(i+1);if(i===2)confetti(60)});set(+(store.get('m_pct_stars')||0))})();
+
+/* ================= Exit check ================= */
+const EXF=[[1,2],[1,4],[3,4],[1,5],[2,5],[3,5],[4,5],[1,10],[7,10],[9,20],[3,25],[11,20]];
+function exGen(){const v=ri(11,99),[a,b]=pick(EXF),pc=pick([10,20,25,50]),wh=(100/gcd(pc,100))*ri(2,12)*pick([1,10]),kp=pick([10,20,25,50]),part=ri(2,9)*(kp===25?3:kp===20?2:1);
+  const Q=[
+    {q:`1) ${dec(v/100)} = ? %`,a:v,u:'%'},
+    {q:`2) ${fr(a,b)} = ? %`,a:a*100/b,u:'%'},
+    {q:`3) ${fmt(wh)}-ийн ${pc}% = ?`,a:wh*pc/100,u:''},
+    {q:`4) Тооны ${kp}% нь ${part} бол тоо нь = ?`,a:part*100/kp,u:''}];
+  $('exq').innerHTML=Q.map(x=>`<div class="card"><div class="q">${x.q}</div><div class="calc"><input class="inp" inputmode="decimal" placeholder="?" data-a="${x.a}"> ${x.u} <button class="btn sm">✓</button></div></div>`).join('');$('exFb').textContent='';
+  $('exq').querySelectorAll('.card').forEach(c=>{const i=c.querySelector('input');c.querySelector('button').onclick=()=>{const ok=near(num(i.value),+i.dataset.a);i.className='inp '+(ok?'ok':'no');
+    const n=$('exq').querySelectorAll('input.ok').length;$('exFb').className='feedback ok';$('exFb').textContent=`✔ ${n}/4 зөв = ${n*25}%`;if(ok){coins++;updXP();confetti(n===4?120:25)}}})}
+$('exNew').onclick=exGen;exGen();
+
+/* ================= Confetti (pixel squares + coins) ================= */
+const cf=$('confetti'),cfx=cf.getContext('2d');let parts=[],cRun=false;
+function confetti(n){cf.width=innerWidth;cf.height=innerHeight;const cols=['#39ff14','#ff3ea5','#29e0ff','#ffd23f','#ffffff','#ff9f1c'];
+  for(let i=0;i<n;i++)parts.push({x:innerWidth/2+Math.random()*300-150,y:innerHeight*.45,vx:Math.random()*14-7,vy:-(4+Math.random()*14),s:6+Math.floor(Math.random()*3)*3,c:cols[i%6],coin:i%5===0,life:120});
+  if(!cRun){cRun=true;requestAnimationFrame(cStep)}}
+function cStep(){cfx.clearRect(0,0,cf.width,cf.height);parts.forEach(p=>{p.vy+=.4;p.x+=p.vx;p.y+=p.vy;p.life--;const x=Math.round(p.x/3)*3,y=Math.round(p.y/3)*3;
+  if(p.coin){cfx.fillStyle='#7a5a00';cfx.fillRect(x-7,y-7,14,14);cfx.fillStyle='#ffd23f';cfx.fillRect(x-5,y-5,10,10);cfx.fillStyle='#fff6b0';cfx.fillRect(x-3,y-3,3,3)}
+  else{cfx.fillStyle=p.c;cfx.fillRect(x,y,p.s,p.s)}});
+  parts=parts.filter(p=>p.life>0&&p.y<cf.height+20);if(parts.length)requestAnimationFrame(cStep);else{cRun=false;cfx.clearRect(0,0,cf.width,cf.height)}}
+
+updXP();go(0);
+</script>
+</body>
+</html>
